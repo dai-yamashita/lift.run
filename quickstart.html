@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset='utf-8'>
+    <title>Lift - Quickstart Guide</title>
+    <link rel="stylesheet" type="text/css" href="styles.css" />
+    <link rel="icon" sizes="16x16 32x32 48x48 64x64" href="media/favicon.ico" />
+    <script src="js/jquery.js" defer></script>
+    <script src="js/main.js" defer></script>
+    <script src="js/prism.js" defer></script>
+  </head>
+  <body>
+    <header>
+      <div id="top">
+        <div class="content-wrapper">
+          <p><a href="index.html"><img src="media/lift-logo.svg" class="svg logo"/></a></p>
+          <p class="subtitle">Lua automation tool and scripting framework</p>
+          <p class="header-right"><a href="https://github.com/tbastos/lift"><span class="octicon octicon-mark-github"></span>View on GitHub</a></p>
+          <p class="header-right"><a href="https://luarocks.org/modules/tbastos/lift"><img src="media/luarocks-mark.svg" class="svg icon"/>View on LuaRocks</a></p>
+          <p class="header-right"><a href="https://github.com/tbastos/lift/releases/tag/v0.1.0"><span class="octicon octicon-tag"></span>Version 0.1.0</a></p>
+        </div>
+      </div>
+      <div id='sub'>
+        <div class="content-wrapper">
+          <p id="breadcrumbs">
+            <a href="index.html">Documentation</a>
+            <span id="carat">❯</span>
+            Quickstart Guide
+          </p>
+          <p id='edit'>
+            <a href="/quickstart.md"><span class="octicon octicon-pencil"></span> Edit this page on GitHub</a>
+          </p>
+        </div>
+      </div>
+    </header>
+    <div class="content-wrapper">
+      <nav class="sidebar">
+        <ul class="nav-sections">
+          <li class="nav-section-name">
+            <a href="index.html">Documentation</a>
+            <ul class="nav-section-pages">
+              <li class="nav-section-page">
+                <a href="index.html">Overview</a>
+              </li>
+              <li class="nav-section-page">
+                <a href="quickstart.html">Quickstart</a>
+              </li>
+              <li class="nav-section-page">
+                <a href="examples.html">Examples</a>
+              </li>
+            </ul>
+        </li>
+          <li class="nav-section-name">
+            <a href="api/index.html">API Reference</a>
+            <ul class="nav-section-pages">
+              <li class="nav-section-page">
+                <a href="api/index.html">Overview</a>
+              </li>
+              <li class="nav-section-page">
+                <a href="api/string.html">String</a>
+              </li>
+            </ul>
+        </li>
+        </ul>
+      </nav>
+      <article class="main-content">
+        <section>
+          <section class="section">
+            <h1>Quickstart Guide</h1>
+            <a name="L1..Installing.Lift"></a>
+<h2>1. Installing Lift</h2>
+
+<p>Please use the following <a href="http://www.luarocks.org/">LuaRocks</a> command to install Lift:</p>
+
+<pre class="console"><code><span class="path"></span><span class="prompt">❯</span><span class="command"> luarocks install lift</span></code></pre>
+
+
+<a name="Prerequisites"></a>
+<h3>Prerequisites</h3>
+
+<ul>
+<li><strong>OS:</strong> Linux, OSX, Windows or another OS supported by <a href="http://libuv.org/">libuv</a>.</li>
+<li><strong>Lua:</strong> Lua 5.2, Lua 5.3, LuaJIT 2.0 or LuaJIT 2.1</li>
+<li><strong>Libraries:</strong> <a href="http://www.inf.puc-rio.br/~roberto/lpeg/">LPeg</a> and <a href="https://github.com/luvit/luv">luv</a> (automatically installed by LuaRocks)</li>
+</ul>
+
+
+<p><strong>Note:</strong> LuaRocks uses <a href="http://www.cmake.org/">CMake</a> to build <a href="https://github.com/luvit/luv">luv</a>. If you have CMake installed and still get build errors, please <a href="https://github.com/tbastos/lift/issues">create an issue on GitHub</a> with as much information as possible about your system and the error.</p>
+
+<a name="L2..Automating.project.tasks"></a>
+<h2>2. Automating project tasks</h2>
+
+<p>A &ldquo;build script&rdquo;.</p>
+
+<p>Create a file named <code>Liftfile.lua</code> in your project&rsquo;s root directory:</p>
+
+<pre><code class="language-lua">local fs = require 'lift.fs'
+local task = require 'lift.task'
+local config = require 'lift.config'
+local request = require 'lift.request'
+
+local function download(file_url)
+  print('Downloading '..file_url)
+  local filename = file_url:match('/([^/]+)$')
+  request(file_url):pipe(fs.write_to(filename)):wait_finish()
+  return filename
+end
+
+function task.greet() -- executed once, despite being called multiple times
+  print('Hello '..(config.USER or 'unknown')..'!')
+end
+
+function task.download_lua()
+  task.greet()
+  print('Saved '..download('http://www.lua.org/ftp/lua-5.3.2.tar.gz'))
+end
+
+function task.download_luarocks()
+  task.greet()
+  print('Saved '..download('https://github.com/keplerproject/luarocks/archive/v2.3.0.tar.gz'))
+end
+
+function task.default()
+  task.greet()
+  task{task.download_lua, task.download_luarocks}() -- these tasks run in parallel
+  print('Done!')
+end
+
+function task.clean()
+  for path in fs.glob('*.tar.gz') do
+    print('Deleting '..path)
+    fs.unlink(path)
+  end
+end</code></pre>
+
+
+<p>Calling <code>lift</code> from any project dir will produce:</p>
+
+<pre class="console"><code><span class="path"></span><span class="prompt">❯</span><span class="command"> lift</span>
+Hello tbastos!
+Downloading http://www.lua.org/ftp/lua-5.3.2.tar.gz
+Downloading https://github.com/keplerproject/luarocks/archive/v2.3.0.tar.gz
+Saved lua-5.3.2.tar.gz
+Saved v2.3.0.tar.gz
+Done!
+
+<span class="path"></span><span class="prompt">❯</span><span class="command"> lift clean</span>
+Deleting /Users/tbastos/Work/lift/examples/downloads/lua-5.3.2.tar.gz
+Deleting /Users/tbastos/Work/lift/examples/downloads/v2.3.0.tar.gz
+
+<span class="path"></span><span class="prompt">❯</span><span class="command"> lift download_lua</span>
+Hello tbastos!
+Downloading http://www.lua.org/ftp/lua-5.3.2.tar.gz
+Saved lua-5.3.2.tar.gz
+
+<span class="path"></span><span class="prompt">❯</span><span class="command"> lift clean greet</span>
+Hello tbastos!
+Deleting /Users/tbastos/Work/lift/examples/downloads/lua-5.3.2.tar.gz</code></pre>
+
+
+<p>To plot a graph of task calls use (requires graphviz):</p>
+
+<pre class="console"><code><span class="path"></span><span class="prompt">❯</span><span class="command"> lift task run --plot graph.svg</span></code></pre>
+
+
+<p><img src="http://tbastos.github.io/i/lift-examples-downloads-graph.svg" alt="Task call graph" /></p>
+
+<p>For debugging purposes you may want to run <code>lift</code> with tracing enabled:</p>
+
+<pre class="console"><code><span class="path"></span><span class="prompt">❯</span><span class="command"> lift --trace</span>
+[cli] running root command
+[task] running task list {default} (nil)
+[thread] async(function</Users/tbastos/Work/lift/examples/downloads/Liftfile.lua:30>) started
+[task] running greet (nil)
+[thread] async(function</Users/tbastos/Work/lift/examples/downloads/Liftfile.lua:16>) started
+Hello tbastos!
+[thread] async(function</Users/tbastos/Work/lift/examples/downloads/Liftfile.lua:16>) ended with true {}
+[task] finished greet (nil) [0.00s]
+[task] running task list {download_lua, download_luarocks} (nil)
+... redacted for length ...
+[task] finished task list {download_lua, download_luarocks} (nil) [4.87s]
+Done!
+[thread] async(function</Users/tbastos/Work/lift/examples/downloads/Liftfile.lua:30>) ended with true {}
+[task] finished task list {default} (nil) [4.87s]
+[cli] finished root command [4.87s]
+[thread] async(function</Users/tbastos/Work/lift/bin/lift:33>) ended with true {}
+Total time 4.87s, memory 603K</code></pre>
+
+
+<a name="L3..Creating.custom.commands"></a>
+<h2>3. Creating custom commands</h2>
+          </section>
+          
+        </section>
+        <section id="footer">
+          <p>Generated by <a class="link" href="http://lift.run/" target="_blank" rel="external">Lift v0.1.0</a> on February 29, 2016</p>
+        </section>
+      </article>
+    </div>
+  </body>
+</div>
+</html>
